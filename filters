@@ -1,0 +1,145 @@
+Tumhare code me filters sidebar already include ho raha hai:
+
+@include('partials.filters-sidebar')
+
+Isliye tumhe sirf 3 choti cheezein karni hain.
+
+1️⃣ Product Grid ko ID de do
+
+Tumhare code me ye part hai:
+
+<div class="row g-4">
+
+Isko change karo:
+
+<div class="row g-4" id="product-grid">
+
+Bas itna hi change.
+
+2️⃣ Filters Sidebar Inputs
+
+partials/filters-sidebar.blade.php me filters add karo.
+
+Example:
+
+<h5>Category</h5>
+
+<select id="filter-category" class="form-control mb-3">
+<option value="">All</option>
+
+@foreach($categories as $category)
+<option value="{{ $category->id }}">
+{{ $category->name }}
+</option>
+@endforeach
+
+</select>
+
+
+<h5>Price</h5>
+
+<select id="filter-price" class="form-control mb-3">
+
+<option value="">All</option>
+<option value="0-100">0-100</option>
+<option value="100-500">100-500</option>
+<option value="500-1000">500-1000</option>
+
+</select>
+
+
+<h5>Rating</h5>
+
+<select id="filter-rating" class="form-control mb-3">
+
+<option value="">All</option>
+<option value="4">4★ & above</option>
+<option value="3">3★ & above</option>
+
+</select>
+
+
+<button id="applyFilters" class="btn btn-success w-100">
+Apply Filters
+</button>
+3️⃣ AJAX Script
+
+home.blade.php ke bottom me add karo:
+
+<script>
+
+document.getElementById("applyFilters").addEventListener("click", function(){
+
+let category = document.getElementById("filter-category").value;
+let price = document.getElementById("filter-price").value;
+let rating = document.getElementById("filter-rating").value;
+
+fetch("{{ route('filter.products') }}", {
+
+method: "POST",
+
+headers: {
+
+"Content-Type": "application/json",
+"X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
+
+},
+
+body: JSON.stringify({
+
+category: category,
+price: price,
+rating: rating
+
+})
+
+})
+
+.then(res => res.text())
+
+.then(data => {
+
+document.getElementById("product-grid").innerHTML = data;
+
+});
+
+});
+
+</script>
+4️⃣ Controller Filter
+
+Controller me:
+
+public function filterProducts(Request $request)
+{
+
+$query = Product::query();
+
+if($request->category){
+$query->where('category_id',$request->category);
+}
+
+if($request->rating){
+$query->where('rating','>=',$request->rating);
+}
+
+if($request->price){
+
+$price = explode('-',$request->price);
+
+$query->whereBetween('price',[$price[0],$price[1]]);
+
+}
+
+$products = $query->get();
+
+return view('partials.filtered-products',compact('products'));
+
+}
+5️⃣ Filtered Products View
+
+resources/views/partials/filtered-products.blade.php
+
+Yaha same product card copy paste karo jo tum home.blade.php me use kar rahe ho.
+
+Laravel sirf filtered products HTML return karega.
