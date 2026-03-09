@@ -1,0 +1,172 @@
+1️⃣ Sidebar Filters (home.blade.php)
+
+Page ke left side me ye filters add karo:
+
+<div class="col-lg-3">
+
+<div class="card p-3">
+
+<h5>Filters</h5>
+
+<select id="category" class="form-control mb-2">
+<option value="">All Categories</option>
+
+@foreach($categories as $cat)
+<option value="{{ $cat->id }}">
+{{ $cat->name }}
+</option>
+@endforeach
+
+</select>
+
+
+<select id="price" class="form-control mb-2">
+
+<option value="">All Price</option>
+<option value="0-100">0-100</option>
+<option value="100-500">100-500</option>
+<option value="500-1000">500-1000</option>
+
+</select>
+
+
+<select id="rating" class="form-control mb-2">
+
+<option value="">All Rating</option>
+<option value="4">4★ & above</option>
+<option value="3">3★ & above</option>
+
+</select>
+
+
+<button id="applyFilters" class="btn btn-success w-100">
+Apply Filters
+</button>
+
+</div>
+
+</div>
+2️⃣ Products Section Wrap karo
+
+Jaha tumhare saare sections hain usko ek div me wrap karo:
+
+<div class="col-lg-9">
+
+<div id="productsSection">
+
+@include('partials.home-products')
+
+</div>
+
+</div>
+3️⃣ jQuery AJAX (Beginner Friendly)
+
+Page ke bottom me add karo:
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+
+$("#applyFilters").click(function(){
+
+let category = $("#category").val();
+let price = $("#price").val();
+let rating = $("#rating").val();
+
+$.ajax({
+
+url: "{{ route('products.filter') }}",
+type: "POST",
+
+data: {
+
+category: category,
+price: price,
+rating: rating,
+_token: "{{ csrf_token() }}"
+
+},
+
+success: function(response){
+
+$("#productsSection").html(response);
+
+}
+
+});
+
+});
+
+</script>
+
+👉 Ye page reload nahi karega, sirf products replace karega.
+
+4️⃣ Route
+
+web.php
+
+Route::post('/filter-products',[ProductController::class,'filter'])->name('products.filter');
+5️⃣ Controller
+public function filter(Request $request)
+{
+
+$query = Product::query();
+
+if($request->category){
+$query->where('category_id',$request->category);
+}
+
+if($request->rating){
+$query->where('rating','>=',$request->rating);
+}
+
+if($request->price){
+
+$price = explode('-',$request->price);
+
+$query->whereBetween('price',[$price[0],$price[1]]);
+
+}
+
+$trendingProducts = $query->get();
+
+return view('partials.home-products',compact('trendingProducts'));
+
+}
+6️⃣ Partial Blade
+
+Create:
+
+resources/views/partials/home-products.blade.php
+
+Isme tumhare saare sections paste karo:
+
+Trending
+Newly Arrived
+Best Selling
+Most Popular
+
+Aur sabme $trendingProducts use karo.
+
+Example:
+
+@foreach($trendingProducts as $product)
+
+<div class="col">
+<h6>{{ $product->name }}</h6>
+<p>{{ $product->price }}</p>
+
+</div>
+
+@endforeach
+🎯 Result
+
+Ab jab tum:
+
+Apply Filters click karoge
+
+✔ category filter
+✔ price filter
+✔ rating filter
+✔ page reload nahi hoga
+✔ saare sections update ho jayenge
