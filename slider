@@ -1,15 +1,30 @@
-1️⃣ Slider Library Add karo
+1️⃣ filter.blade.php
+<h5>Categories</h5>
 
-home.blade.php ya layout file me CSS + JS add karo.
+@foreach($categories as $category)
+<div>
+    <input type="checkbox" name="category[]" value="{{ $category->id }}" class="category-filter">
+    {{ $category->name }}
+</div>
+@endforeach
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.css">
 
-<script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.js"></script>
-2️⃣ Filter blade me slider add karo
+<h5 class="mt-4">Rating</h5>
 
-filter.blade.php
+<div>
+    <input type="radio" name="rating" value="5" class="rating-filter"> 5 Star
+</div>
 
-<h6 class="mt-4">Price Range</h6>
+<div>
+    <input type="radio" name="rating" value="4" class="rating-filter"> 4 Star & Up
+</div>
+
+<div>
+    <input type="radio" name="rating" value="3" class="rating-filter"> 3 Star & Up
+</div>
+
+
+<h5 class="mt-4">Price Range</h5>
 
 <div id="price-slider"></div>
 
@@ -20,65 +35,157 @@ filter.blade.php
 
 <input type="hidden" id="min_price" value="0">
 <input type="hidden" id="max_price" value="10000">
-3️⃣ Slider initialize karo
+2️⃣ Slider Library Add karo
 
-Page ke bottom me script add karo.
+home.blade.php ya layout.blade.php me:
 
-var slider = document.getElementById('price-slider');
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.css">
 
-noUiSlider.create(slider, {
-    start: [0, 10000],
-    connect: true,
-    range: {
-        'min': 0,
-        'max': 10000
+<script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.js"></script>
+3️⃣ AJAX + Slider Script
+
+home.blade.php ke bottom me ye pura script paste karo
+
+<script>
+
+$(document).ready(function(){
+
+    // PRICE SLIDER
+    var slider = document.getElementById('price-slider');
+
+    noUiSlider.create(slider, {
+        start: [0, 10000],
+        connect: true,
+        range: {
+            'min': 0,
+            'max': 10000
+        }
+    });
+
+    slider.noUiSlider.on('update', function(values){
+
+        let min = Math.round(values[0]);
+        let max = Math.round(values[1]);
+
+        $('#min-price').text(min);
+        $('#max-price').text(max);
+
+        $('#min_price').val(min);
+        $('#max_price').val(max);
+
+    });
+
+
+    // MAIN FILTER FUNCTION
+    function applyFilters(){
+
+        let categories = [];
+
+        $('.category-filter:checked').each(function(){
+            categories.push($(this).val());
+        });
+
+        let rating = $('input[name="rating"]:checked').val();
+        let min_price = $('#min_price').val();
+        let max_price = $('#max_price').val();
+
+
+        $.ajax({
+
+            url: "{{ route('home') }}",
+            method: "GET",
+
+            data:{
+                category: categories,
+                rating: rating,
+                min_price: min_price,
+                max_price: max_price
+            },
+
+            success:function(response){
+
+                let html = '';
+
+                response.forEach(product => {
+
+                    html += `
+                    <div class="col">
+                        <div class="product-item">
+
+                            <figure>
+                                <img src="/images/${product.image}" class="tab-image">
+                            </figure>
+
+                            <h3>${product.name}</h3>
+
+                            <span class="rating">
+                                ⭐ ${product.rating}
+                            </span>
+
+                            <span class="price">₹${product.price}</span>
+
+                            <button class="btn btn-primary btn-sm add-to-cart"
+                                data-product-id="${product.id}">
+                                Add to Cart
+                            </button>
+
+                        </div>
+                    </div>
+                    `;
+
+                });
+
+                $('#product-list').html(html);
+
+            }
+
+        });
+
     }
+
+
+    // CATEGORY FILTER
+    $('.category-filter').change(function(){
+        applyFilters();
+    });
+
+
+    // RATING FILTER
+    $('.rating-filter').change(function(){
+        applyFilters();
+    });
+
+
+    // PRICE SLIDER CHANGE
+    slider.noUiSlider.on('change', function(){
+        applyFilters();
+    });
+
+
 });
 
-slider.noUiSlider.on('update', function(values){
+</script>
+4️⃣ Controller (HomeController.php)
 
-    $('#min-price').text(Math.round(values[0]));
-    $('#max-price').text(Math.round(values[1]));
+Ensure ye logic ho:
 
-    $('#min_price').val(Math.round(values[0]));
-    $('#max_price').val(Math.round(values[1]));
+$query = Product::query();
 
-});
+if($request->category){
+    $query->whereIn('category_id',$request->category);
+}
 
-Ab slider move karne par min aur max price update hoga.
-
-4️⃣ Slider ko AJAX filter se connect karo
-
-Tumhare existing filter function me bas ye add karna hai.
-
-slider.noUiSlider.on('change', function(){
-    applyFilters();
-});
-
-Matlab:
-
-Slider change
-      ↓
-AJAX call
-      ↓
-Products update
-
-Page reload nahi hoga.
-
-5️⃣ Controller me price filter
-
-HomeController
+if($request->rating){
+    $query->where('rating','>=',$request->rating);
+}
 
 if($request->min_price && $request->max_price){
-    $query->whereBetween('price', [
+    $query->whereBetween('price',[
         $request->min_price,
         $request->max_price
     ]);
 }
-6️⃣ Result
 
-User agar slider move kare:
+$products = $query->get();
 
-₹500  ─────────●────── ₹3000
-
-To sirf 500–3000 price range ke products show honge.
+return response()->json($products);
