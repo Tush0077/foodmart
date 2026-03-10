@@ -1,0 +1,84 @@
+1️⃣ Slider Library Add karo
+
+home.blade.php ya layout file me CSS + JS add karo.
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.js"></script>
+2️⃣ Filter blade me slider add karo
+
+filter.blade.php
+
+<h6 class="mt-4">Price Range</h6>
+
+<div id="price-slider"></div>
+
+<div class="d-flex justify-content-between mt-2">
+    <span>₹<span id="min-price">0</span></span>
+    <span>₹<span id="max-price">10000</span></span>
+</div>
+
+<input type="hidden" id="min_price" value="0">
+<input type="hidden" id="max_price" value="10000">
+3️⃣ Slider initialize karo
+
+Page ke bottom me script add karo.
+
+var slider = document.getElementById('price-slider');
+
+noUiSlider.create(slider, {
+    start: [0, 10000],
+    connect: true,
+    range: {
+        'min': 0,
+        'max': 10000
+    }
+});
+
+slider.noUiSlider.on('update', function(values){
+
+    $('#min-price').text(Math.round(values[0]));
+    $('#max-price').text(Math.round(values[1]));
+
+    $('#min_price').val(Math.round(values[0]));
+    $('#max_price').val(Math.round(values[1]));
+
+});
+
+Ab slider move karne par min aur max price update hoga.
+
+4️⃣ Slider ko AJAX filter se connect karo
+
+Tumhare existing filter function me bas ye add karna hai.
+
+slider.noUiSlider.on('change', function(){
+    applyFilters();
+});
+
+Matlab:
+
+Slider change
+      ↓
+AJAX call
+      ↓
+Products update
+
+Page reload nahi hoga.
+
+5️⃣ Controller me price filter
+
+HomeController
+
+if($request->min_price && $request->max_price){
+    $query->whereBetween('price', [
+        $request->min_price,
+        $request->max_price
+    ]);
+}
+6️⃣ Result
+
+User agar slider move kare:
+
+₹500  ─────────●────── ₹3000
+
+To sirf 500–3000 price range ke products show honge.
