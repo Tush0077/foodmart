@@ -1,0 +1,129 @@
+1️⃣ Apply button wala code REMOVE karo
+
+frontend.blade.php ke last me jo script hai:
+
+$('.apply-Filter').click(function(e) {
+
+POORA script delete kar do.
+
+2️⃣ Naya AJAX filter script add karo
+
+Usi jagah ye script paste karo
+
+<script>
+$(document).ready(function(){
+
+    function applyFilters(){
+
+        let category = $('input[name="category"]:checked').val();
+        let min_price = $('#min_price').val();
+        let max_price = $('#max_price').val();
+        let rating = $('input[name="rating"]:checked').val();
+        let sort = $('#sort_price').val();
+
+        $.ajax({
+            url: "{{ route('home') }}",
+            method: "GET",
+            data:{
+                category: category,
+                min_price: min_price,
+                max_price: max_price,
+                rating: rating,
+                sort: sort
+            },
+
+            success:function(response){
+
+                let html = '';
+
+                response.forEach(product => {
+
+                    html += `
+                    <div class="col-md-3 mb-4">
+                        <div class="card">
+                            <img src="/storage/${product.image}" class="card-img-top">
+                            <div class="card-body">
+                                <h5>${product.name}</h5>
+                                <p>₹${product.price}</p>
+                                <p>⭐ ${product.rating}</p>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                });
+
+                $('#product-list').html(html);
+            }
+        });
+
+    }
+
+    // CATEGORY CHANGE
+    $('input[name="category"]').change(function(){
+        applyFilters();
+    });
+
+    // RATING CHANGE
+    $('input[name="rating"]').change(function(){
+        applyFilters();
+    });
+
+    // PRICE CHANGE
+    $('#min_price, #max_price').keyup(function(){
+        applyFilters();
+    });
+
+    // SORT CHANGE
+    $('#sort_price').change(function(){
+        applyFilters();
+    });
+
+});
+</script>
+3️⃣ Price sorting dropdown add karo
+
+filter.blade.php me rating ke neeche ye add karo
+
+<h6 class="mt-4 mb-2">Sort By Price</h6>
+
+<select id="sort_price" class="form-control">
+    <option value="">Default</option>
+    <option value="low_high">Low to High</option>
+    <option value="high_low">High to Low</option>
+</select>
+4️⃣ Controller me sorting add karo
+
+Tumhare HomeController me ye add karo.
+
+Current code
+if($request->rating){
+    $query->where('rating','>=',$request->rating);
+}
+Uske niche add karo
+if($request->sort == 'low_high'){
+    $query->orderBy('price','asc');
+}
+
+if($request->sort == 'high_low'){
+    $query->orderBy('price','desc');
+}
+5️⃣ Ensure product container exist karta ho
+
+home.blade.php me products ko is div me wrap karo:
+
+<div class="row" id="product-list">
+    @foreach($products as $product)
+
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <img src="{{ asset('storage/'.$product->image) }}" class="card-img-top">
+            <div class="card-body">
+                <h5>{{ $product->name }}</h5>
+                <p>₹{{ $product->price }}</p>
+                <p>⭐ {{ $product->rating }}</p>
+            </div>
+        </div>
+    </div>
+
+    @endforeach
+</div>
